@@ -3,6 +3,7 @@
 # -f tag=v0.8.2-rc.1 \
 # -f title="Release v0.8.2-rc.1"
 ---
+name: Release
 on:
   workflow_dispatch:
     inputs:
@@ -12,9 +13,9 @@ on:
       tag:
         description: Release tag (e.g. v0.0.1-rc.1)
         required: true
-      title:
-        description: Release title (e.g. Release v0.0.1)
-        required: true
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 env:
   SOURCE_REPOSITORY: CycodeLabs/cimon
 jobs:
@@ -32,18 +33,18 @@ jobs:
           --pattern "cimon_linux_x86_64.tar.gz" \
           --pattern "checksums.txt"
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.CIMON_RELEASES_TOKEN }}
           SOURCE_RELEASE_TAG: ${{ github.event.inputs.sourceTag }}
       - run: |
           gh release create \
-          --notes "" \
-          --title "$RELEASE_TITLE" \
+          --notes "Mirror of $SOURCE_RELEASE_TAG" \
+          --title "$RELEASE_TAG" \
           --latest \
           "$RELEASE_TAG" \
           cimon_linux_arm64.tar.gz \
           cimon_linux_x86_64.tar.gz \
           checksums.txt
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          RELEASE_TITLE: ${{ github.event.inputs.title }}
+          GITHUB_TOKEN: ${{ secrets.CIMON_RELEASES_TOKEN }}
+          SOURCE_RELEASE_TAG: ${{ github.event.inputs.sourceTag }}
           RELEASE_TAG: ${{ github.event.inputs.tag }}
