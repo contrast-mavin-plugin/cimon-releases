@@ -1,0 +1,49 @@
+# gh workflow run release.yaml \
+# -f sourceTag=v0.8.2 \
+# -f tag=v0.8.2-rc.1 \
+# -f title="Release v0.8.2-rc.1"
+---
+on:
+  workflow_dispatch:
+    inputs:
+      sourceTag:
+        description: Source release tag (e.g. v0.0.1)
+        required: true
+      tag:
+        description: Release tag (e.g. v0.0.1-rc.1)
+        required: true
+      title:
+        description: Release title (e.g. Release v0.0.1)
+        required: true
+env:
+  SOURCE_REPOSITORY: CycodeLabs/cimon
+jobs:
+  release:
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # v3.5.3
+      - run: |
+          gh release download \
+          $SOURCE_RELEASE_TAG \
+          --repo $SOURCE_REPOSITORY \
+          --pattern "cimon_linux_arm64.tar.gz" \
+          --pattern "cimon_linux_x86_64.tar.gz" \
+          --pattern "checksums.txt"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_RELEASE_TAG: ${{ github.event.inputs.sourceTag }}
+      - run: |
+          gh release create \
+          --notes "" \
+          --title "$RELEASE_TITLE" \
+          --latest \
+          "$RELEASE_TAG" \
+          cimon_linux_arm64.tar.gz \
+          cimon_linux_x86_64.tar.gz \
+          checksums.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TITLE: ${{ github.event.inputs.title }}
+          RELEASE_TAG: ${{ github.event.inputs.tag }}
